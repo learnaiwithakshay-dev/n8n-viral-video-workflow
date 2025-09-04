@@ -278,6 +278,49 @@ app.get('/api/instagram/accounts', (req, res) => {
   });
 });
 
+// Delete all Instagram accounts
+app.delete('/api/instagram/accounts', (req, res) => {
+  try {
+    instagramAccounts = []; // Clear all accounts
+    io.emit('instagram-accounts-cleared');
+    
+    res.json({
+      success: true,
+      message: 'All Instagram accounts removed'
+    });
+  } catch (error) {
+    console.error('Delete accounts error:', error);
+    res.status(500).json({ error: 'Failed to delete accounts' });
+  }
+});
+
+// Delete specific Instagram account
+app.delete('/api/instagram/accounts/:accountId', (req, res) => {
+  try {
+    const { accountId } = req.params;
+    const initialLength = instagramAccounts.length;
+    
+    instagramAccounts = instagramAccounts.filter(acc => acc.id !== accountId);
+    
+    if (instagramAccounts.length < initialLength) {
+      io.emit('instagram-account-deleted', { accountId });
+      
+      res.json({
+        success: true,
+        message: 'Instagram account removed'
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Account not found'
+      });
+    }
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({ error: 'Failed to delete account' });
+  }
+});
+
 // n8n Cloud webhook integration with Airtable
 app.post('/api/n8n-webhook', async (req, res) => {
   try {

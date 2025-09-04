@@ -53,14 +53,35 @@ export default function InstagramManager({ accounts, onAccountsUpdated, onAccoun
   }
 
   const removeAccount = async (accountId) => {
-    // In production, implement proper account removal
-    const updatedAccounts = accounts.filter(acc => acc.id !== accountId)
-    onAccountsUpdated(updatedAccounts)
+    try {
+      await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/instagram/accounts/${accountId}`)
+      const updatedAccounts = accounts.filter(acc => acc.id !== accountId)
+      onAccountsUpdated(updatedAccounts)
+      
+      // Remove from selected accounts if present
+      const updatedSelected = selectedAccounts.filter(id => id !== accountId)
+      setSelectedAccounts(updatedSelected)
+      onAccountsSelected(updatedSelected)
+    } catch (error) {
+      console.error('Failed to remove account:', error)
+      alert('Failed to remove account')
+    }
+  }
+
+  const clearAllAccounts = async () => {
+    if (!confirm('Are you sure you want to remove all Instagram accounts?')) {
+      return
+    }
     
-    // Remove from selected accounts if present
-    const updatedSelected = selectedAccounts.filter(id => id !== accountId)
-    setSelectedAccounts(updatedSelected)
-    onAccountsSelected(updatedSelected)
+    try {
+      await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/instagram/accounts`)
+      onAccountsUpdated([])
+      setSelectedAccounts([])
+      onAccountsSelected([])
+    } catch (error) {
+      console.error('Failed to clear accounts:', error)
+      alert('Failed to clear accounts')
+    }
   }
 
   const handleNext = () => {
@@ -146,7 +167,16 @@ export default function InstagramManager({ accounts, onAccountsUpdated, onAccoun
       {/* Connected Accounts */}
       {accounts.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Connected Accounts</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Connected Accounts</h3>
+            <button
+              onClick={clearAllAccounts}
+              className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Clear All
+            </button>
+          </div>
           <div className="space-y-3">
             {accounts.map((account) => (
               <div
