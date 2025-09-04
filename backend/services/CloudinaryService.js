@@ -5,9 +5,9 @@ class CloudinaryService {
   constructor() {
     // Configure Cloudinary
     cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dtkps2uzi',
+      api_key: process.env.CLOUDINARY_API_KEY || '718438387522575',
+      api_secret: process.env.CLOUDINARY_API_SECRET || 'WU0l288kOX_R1hXm2QYD8ASbfZs'
     });
 
     // Configure storage

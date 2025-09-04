@@ -28,8 +28,8 @@ services:
       - key: AIRTABLE_TABLE_NAME
         value: tblWYCIJPsX4UMZRp
       - key: CLOUDINARY_CLOUD_NAME
-        value: c-0893750ab777a142a105a0bae065ea
+        value: dtkps2uzi
       - key: CLOUDINARY_API_KEY
-        value: "283458285266137"
+        value: "718438387522575"
       - key: CLOUDINARY_API_SECRET
-        value: 1ug1pCmOil2K3q8Bl4DfDHpGKjY
+        value: WU0l288kOX_R1hXm2QYD8ASbfZs

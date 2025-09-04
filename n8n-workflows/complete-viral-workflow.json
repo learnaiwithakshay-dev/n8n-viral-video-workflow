@@ -16,7 +16,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Process the incoming data from frontend\nconst data = $input.first().json;\nconsole.log('Received webhook data:', data);\n\n// Extract data for Airtable and Instagram\nconst videoData = data.videoData || {};\nconst title = data.title || 'Viral Video Title';\nconst accountId = data.accountId || 'unknown';\nconst accountName = data.accountName || 'Unknown Account';\n\nreturn {\n  success: true,\n  workflowId: Date.now().toString(),\n  processedAt: new Date().toISOString(),\n  videoData: videoData,\n  title: title,\n  accountId: accountId,\n  accountName: accountName,\n  message: 'Video processed successfully for Instagram posting'\n};"
+        "jsCode": "// Process the incoming data from frontend\nconst data = $input.first().json;\nconsole.log('Received webhook data:', data);\n\n// Extract data for Airtable and Instagram\nconst videoData = data.videoData || {};\nconst title = data.title || 'Viral Video Title';\nconst accountId = data.accountId || 'unknown';\nconst accountName = data.accountName || 'Unknown Account';\n\n// Use Cloudinary URL if available, otherwise fallback\nconst videoUrl = videoData.cloudinaryUrl || videoData.airtableVideoUrl || 'https://temp-video-storage.com/videos/video.mp4';\n\nreturn {\n  success: true,\n  workflowId: Date.now().toString(),\n  processedAt: new Date().toISOString(),\n  videoData: videoData,\n  title: title,\n  accountId: accountId,\n  accountName: accountName,\n  videoUrl: videoUrl,\n  message: 'Video processed successfully for Instagram posting'\n};"
       },
       "id": "process-node",
       "name": "Process Video Data",
@@ -29,11 +29,11 @@
         "operation": "create",
         "baseId": "={{ $json.videoData.airtableRecordId ? 'appfVqQwxyWbLdrDn' : 'temp_base' }}",
         "tableId": "tblWYCIJPsX4UMZRp",
-                   "fields": {
-             "Name": "={{ $json.title }}",
-             "Caption": "={{ $json.title }}",
-             "URL": "={{ $json.videoData.cloudinaryUrl || $json.videoData.airtableVideoUrl || 'https://temp-video-storage.com/videos/video.mp4' }}"
-           }
+        "fields": {
+          "Name": "={{ $json.title }}",
+          "Caption": "={{ $json.title }}",
+          "URL": "={{ $json.videoUrl }}"
+        }
       },
       "id": "airtable-node",
       "name": "Update Airtable Record",
@@ -46,7 +46,7 @@
         "operation": "create",
         "resource": "media",
         "mediaType": "reel",
-        "mediaUrl": "={{ $json.videoData.cloudinaryUrl || $json.videoData.airtableVideoUrl || 'https://temp-video-storage.com/videos/video.mp4' }}",
+        "mediaUrl": "={{ $json.videoUrl }}",
         "caption": "={{ $json.title }}",
         "additionalFields": {}
       },
