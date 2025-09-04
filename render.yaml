@@ -22,8 +22,8 @@ services:
                            - key: INSTAGRAM_BUSINESS_ACCOUNT_ID
                 value: 17841405793087218
               - key: AIRTABLE_API_KEY
-                value: your_airtable_api_key_here
+                value: patXXXXXXXXXXXXXX
               - key: AIRTABLE_BASE_ID
-                value: your_airtable_base_id_here
+                value: appXXXXXXXXXXXXXX
               - key: AIRTABLE_TABLE_NAME
-                value: Videos
+                value: Media
