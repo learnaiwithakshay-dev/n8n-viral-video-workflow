@@ -110,12 +110,16 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
     let videoData;
     
     if (cloudinaryService) {
+      console.log('🔍 Cloudinary service available, attempting upload...');
       // Upload to Cloudinary
       const videoBuffer = fs.readFileSync(req.file.path);
+      console.log(`📁 File size: ${(videoBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+      
       const cloudinaryResult = await cloudinaryService.uploadVideo(videoBuffer, req.file.originalname);
+      console.log('📤 Cloudinary upload result:', cloudinaryResult);
       
       if (!cloudinaryResult.success) {
-        console.error('Cloudinary upload failed:', cloudinaryResult.error);
+        console.error('❌ Cloudinary upload failed:', cloudinaryResult.error);
         // Fall back to simple upload
         videoData = {
           id: Date.now().toString(),
@@ -129,12 +133,13 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
           status: 'uploaded_successfully'
         };
       } else {
+        console.log('✅ Cloudinary upload successful!');
         videoData = {
           id: cloudinaryResult.publicId,
           filename: req.file.originalname,
           originalName: req.file.originalname,
           airtableRecordId: `temp_record_${Date.now()}`,
-          airtableVideoUrl: `https://temp-video-storage.com/videos/${req.file.originalname}`,
+          airtableVideoUrl: cloudinaryResult.videoUrl, // Use Cloudinary URL instead of placeholder
           cloudinaryUrl: cloudinaryResult.videoUrl,
           size: cloudinaryResult.size,
           duration: cloudinaryResult.duration,
