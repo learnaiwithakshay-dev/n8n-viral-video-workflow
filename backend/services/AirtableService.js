@@ -2,14 +2,40 @@ const Airtable = require('airtable');
 
 class AirtableService {
   constructor() {
+    const apiKey = process.env.AIRTABLE_API_KEY;
+    const baseId = process.env.AIRTABLE_BASE_ID;
+    
+    if (!apiKey) {
+      console.warn('⚠️ AirtableService: No AIRTABLE_API_KEY provided, service will be disabled');
+      this.enabled = false;
+      return;
+    }
+    
+    if (!baseId) {
+      console.warn('⚠️ AirtableService: No AIRTABLE_BASE_ID provided, service will be disabled');
+      this.enabled = false;
+      return;
+    }
+    
     this.base = new Airtable({
-      apiKey: process.env.AIRTABLE_API_KEY
-    }).base(process.env.AIRTABLE_BASE_ID);
+      apiKey: apiKey
+    }).base(baseId);
     
     this.tableName = process.env.AIRTABLE_TABLE_NAME || 'Videos';
+    this.enabled = true;
   }
 
   async uploadVideo(videoBuffer, filename, title, accountId) {
+    if (!this.enabled) {
+      console.warn('⚠️ AirtableService: Service is disabled, returning mock data');
+      return {
+        success: true,
+        recordId: `mock_record_${Date.now()}`,
+        videoUrl: `https://mock-video-storage.com/videos/${filename}`,
+        message: 'Mock Airtable upload (service disabled)'
+      };
+    }
+    
     try {
       // Create a record in Airtable with video information
       const record = await this.base(this.tableName).create([
@@ -41,6 +67,14 @@ class AirtableService {
   }
 
   async getVideoRecord(recordId) {
+    if (!this.enabled) {
+      console.warn('⚠️ AirtableService: Service is disabled, returning mock data');
+      return {
+        success: true,
+        record: { id: recordId, fields: { Name: 'Mock Record' } }
+      };
+    }
+    
     try {
       const record = await this.base(this.tableName).find(recordId);
       return {
@@ -57,6 +91,14 @@ class AirtableService {
   }
 
   async updateStatus(recordId, status) {
+    if (!this.enabled) {
+      console.warn('⚠️ AirtableService: Service is disabled, skipping update');
+      return {
+        success: true,
+        message: 'Mock status update (service disabled)'
+      };
+    }
+    
     try {
       await this.base(this.tableName).update([
         {

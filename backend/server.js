@@ -25,7 +25,8 @@ const io = new Server(server, {
 
 // Initialize services
 const instagramService = new InstagramService();
-const airtableService = new AirtableService();
+// Only initialize AirtableService if API key is available
+const airtableService = process.env.AIRTABLE_API_KEY ? new AirtableService() : null;
 
 // Middleware
 app.use(cors());
