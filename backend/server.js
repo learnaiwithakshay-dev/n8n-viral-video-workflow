@@ -381,44 +381,51 @@ app.post('/api/n8n-webhook', async (req, res) => {
     }
     
     // Call your n8n Cloud webhook URL with Instagram workflow
-    // TODO: Update this URL with your actual n8n webhook URL
     const n8nWebhookUrl = 'https://learnaiwithakshay.app.n8n.cloud/webhook-test/webhook-test';
     
     const n8nPayload = {
-      videoDescription: videoData?.description || 'Viral video content',
-      videoCategory: 'entertainment',
+      videoData: videoData,
       title: title,
       accountId: accountId,
-      accountName: accountName,
-      airtableRecordId: videoData?.airtableRecordId || `temp_record_${Date.now()}`,
-      airtableVideoUrl: videoData?.airtableVideoUrl || `https://temp-video-storage.com/videos/${videoData?.filename || 'video.mp4'}`,
-      instagramCredentials: {
-        accessToken: process.env.INSTAGRAM_ACCESS_TOKEN,
-        businessAccountId: process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID
-      }
+      accountName: accountName
     };
     
     console.log('📤 Sending to n8n:');
     console.log('URL:', n8nWebhookUrl);
     console.log('Payload:', JSON.stringify(n8nPayload, null, 2));
     
-    const n8nResponse = await axios.post(n8nWebhookUrl, n8nPayload, {
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      timeout: 10000
-    });
-    
-    console.log('✅ n8n Response:', JSON.stringify(n8nResponse.data, null, 2));
-    
-    res.json({ success: true, workflowId: n8nResponse.data.id || 'test_workflow_id' });
-  } catch (error) {
-    console.error('❌ n8n webhook error:', error.message);
-    if (error.response) {
-      console.error('n8n response error:', error.response.status, error.response.data);
+    try {
+      const n8nResponse = await axios.post(n8nWebhookUrl, n8nPayload, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      });
+      
+      console.log('✅ n8n Response:', JSON.stringify(n8nResponse.data, null, 2));
+      
+      res.json({ 
+        success: true, 
+        workflowId: n8nResponse.data?.workflowId || 'n8n_workflow_executed',
+        message: 'n8n workflow executed successfully'
+      });
+    } catch (error) {
+      console.error('❌ n8n webhook error:', error.message);
+      if (error.response) {
+        console.error('n8n response error:', error.response.status, error.response.data);
+      }
+      
+      // Don't fail the entire process if n8n webhook fails
+      res.json({ 
+        success: true, 
+        workflowId: 'n8n_failed_but_continued',
+        message: 'n8n workflow failed but process continued',
+        n8nError: error.message
+      });
     }
-    // Don't fail the entire process if n8n webhook fails
-    res.json({ success: true, workflowId: 'test_workflow_id' });
+  } catch (error) {
+    console.error('❌ n8n webhook endpoint error:', error.message);
+    res.status(500).json({ error: 'n8n webhook endpoint failed' });
   }
 });
 
