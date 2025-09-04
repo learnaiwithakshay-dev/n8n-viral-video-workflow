@@ -1,0 +1,155 @@
+{
+  "name": "Viral Video Upload Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "video-uploaded",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "video_uploaded",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "event-filter",
+      "name": "Event Filter",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.OPENROUTER_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "google/gemini-pro"
+            },
+            {
+              "name": "messages",
+              "value": "=[{\"role\":\"system\",\"content\":\"You are a viral video title generator. Create engaging, clickbait titles that will make videos go viral on Instagram. Keep titles under 60 characters.\"},{\"role\":\"user\",\"content\":\"Generate 5 viral Instagram video titles for a video about: {{ $json.video.description }}. Category: {{ $json.video.category }}. Make them engaging and trending.\"}]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ai-title-generation",
+      "name": "AI Title Generation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5000/api/instagram/post",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "videoPath",
+              "value": "={{ $json.video.path }}"
+            },
+            {
+              "name": "title",
+              "value": "={{ $json.selectedTitle }}"
+            },
+            {
+              "name": "accountIds",
+              "value": "={{ $json.selectedAccounts }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "instagram-posting",
+      "name": "Instagram Posting",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Event Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event Filter": {
+      "main": [
+        [
+          {
+            "node": "AI Title Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Title Generation": {
+      "main": [
+        [
+          {
+            "node": "Instagram Posting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
