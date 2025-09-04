@@ -30,26 +30,29 @@ class CloudinaryService {
 
   async uploadVideo(videoBuffer, filename) {
     try {
-      // Upload to Cloudinary
-      const result = await new Promise((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-          {
-            resource_type: 'video',
-            folder: 'viral-videos',
-            public_id: `video_${Date.now()}`,
-            transformation: [
-              { width: 1080, height: 1920, crop: 'fill' },
-              { quality: 'auto' }
-            ]
-          },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          }
-        );
-
-        uploadStream.end(videoBuffer);
+      console.log('🔍 Starting Cloudinary upload...');
+      console.log(`📁 File: ${filename}`);
+      console.log(`📏 Buffer size: ${(videoBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+      
+      // Upload to Cloudinary using base64 encoding
+      const base64Data = videoBuffer.toString('base64');
+      const dataURI = `data:video/mp4;base64,${base64Data}`;
+      
+      console.log('📤 Uploading to Cloudinary...');
+      
+      const result = await cloudinary.uploader.upload(dataURI, {
+        resource_type: 'video',
+        folder: 'viral-videos',
+        public_id: `video_${Date.now()}`,
+        transformation: [
+          { width: 1080, height: 1920, crop: 'fill' },
+          { quality: 'auto' }
+        ]
       });
+
+      console.log('✅ Cloudinary upload successful!');
+      console.log(`📁 Public ID: ${result.public_id}`);
+      console.log(`🔗 URL: ${result.secure_url}`);
 
       return {
         success: true,
@@ -59,7 +62,7 @@ class CloudinaryService {
         size: result.bytes
       };
     } catch (error) {
-      console.error('Cloudinary upload error:', error);
+      console.error('❌ Cloudinary upload error:', error);
       return {
         success: false,
         error: error.message
