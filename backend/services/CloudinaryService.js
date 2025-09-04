@@ -34,13 +34,13 @@ class CloudinaryService {
       console.log(`📁 File: ${filename}`);
       console.log(`📏 Buffer size: ${(videoBuffer.length / 1024 / 1024).toFixed(2)} MB`);
       
-      // Upload to Cloudinary using base64 encoding
-      const base64Data = videoBuffer.toString('base64');
-      const dataURI = `data:video/mp4;base64,${base64Data}`;
+      // Save buffer to temporary file
+      const tempPath = `./temp_${Date.now()}.mp4`;
+      require('fs').writeFileSync(tempPath, videoBuffer);
       
       console.log('📤 Uploading to Cloudinary...');
       
-      const result = await cloudinary.uploader.upload(dataURI, {
+      const result = await cloudinary.uploader.upload(tempPath, {
         resource_type: 'video',
         folder: 'viral-videos',
         public_id: `video_${Date.now()}`,
@@ -49,6 +49,9 @@ class CloudinaryService {
           { quality: 'auto' }
         ]
       });
+
+      // Clean up temp file
+      require('fs').unlinkSync(tempPath);
 
       console.log('✅ Cloudinary upload successful!');
       console.log(`📁 Public ID: ${result.public_id}`);
