@@ -7,6 +7,7 @@ const axios = require('axios');
 const { Server } = require('socket.io');
 const http = require('http');
 const InstagramService = require('./services/InstagramService');
+const AirtableService = require('./services/AirtableService');
 require('dotenv').config();
 
 const app = express();
@@ -22,8 +23,9 @@ const io = new Server(server, {
   }
 });
 
-// Initialize Instagram service
+// Initialize services
 const instagramService = new InstagramService();
+const airtableService = new AirtableService();
 
 // Middleware
 app.use(cors());
@@ -71,22 +73,41 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend server running' });
 });
 
-// Upload video
+// Upload video to Airtable
 app.post('/api/upload-video', upload.single('video'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No video file uploaded' });
     }
 
+    // Read video file buffer
+    const videoBuffer = fs.readFileSync(req.file.path);
+    
+    // Upload to Airtable (we'll get title and accountId later)
+    const airtableResult = await airtableService.uploadVideo(
+      videoBuffer, 
+      req.file.originalname, 
+      'Pending Title', 
+      'pending_account'
+    );
+
+    if (!airtableResult.success) {
+      return res.status(500).json({ error: 'Failed to upload to Airtable' });
+    }
+
     const videoData = {
-      id: Date.now().toString(),
-      filename: req.file.filename,
+      id: airtableResult.recordId,
+      filename: req.file.originalname,
       originalName: req.file.originalname,
-      path: req.file.path,
+      airtableRecordId: airtableResult.recordId,
+      airtableVideoUrl: airtableResult.videoUrl,
       size: req.file.size,
       uploadedAt: new Date(),
-      status: 'uploaded'
+      status: 'uploaded_to_airtable'
     };
+
+    // Clean up local file
+    fs.unlinkSync(req.file.path);
 
     // Emit to connected clients
     io.emit('video-uploaded', videoData);
@@ -94,7 +115,7 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
     res.json({
       success: true,
       video: videoData,
-      message: 'Video uploaded successfully'
+      message: 'Video uploaded to Airtable successfully'
     });
   } catch (error) {
     console.error('Upload error:', error);
@@ -257,18 +278,29 @@ app.get('/api/instagram/accounts', (req, res) => {
   });
 });
 
-// n8n Cloud webhook integration
+// n8n Cloud webhook integration with Airtable
 app.post('/api/n8n-webhook', async (req, res) => {
   try {
     const { videoData, title, accountId, accountName } = req.body;
     
-    // Call your n8n Cloud webhook URL
+    // Update Airtable record with title and account info
+    if (videoData?.airtableRecordId) {
+      await airtableService.updateStatus(videoData.airtableRecordId, 'Processing');
+    }
+    
+    // Call your n8n Cloud webhook URL with Instagram workflow
     const n8nResponse = await axios.post('https://learnaiwithakshay.app.n8n.cloud/webhook-test/webhook-test', {
       videoDescription: videoData?.description || 'Viral video content',
       videoCategory: 'entertainment',
       title: title,
       accountId: accountId,
-      accountName: accountName
+      accountName: accountName,
+      airtableRecordId: videoData?.airtableRecordId,
+      airtableVideoUrl: videoData?.airtableVideoUrl,
+      instagramCredentials: {
+        accessToken: process.env.INSTAGRAM_ACCESS_TOKEN,
+        businessAccountId: process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID
+      }
     });
     
     res.json({ success: true, workflowId: n8nResponse.data.id });
