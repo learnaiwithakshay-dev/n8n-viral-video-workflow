@@ -1,48 +1,68 @@
 const cloudinary = require('cloudinary').v2;
 
-// Configure Cloudinary with your new credentials
-cloudinary.config({
+// Test with the exact credentials from the service
+const credentials = {
   cloud_name: 'dtkps2uzi',
   api_key: '718438387522575',
   api_secret: 'WU0l288kOX_R1hXm2QYD8ASbfZs'
+};
+
+console.log('🧪 Testing Cloudinary credentials...');
+console.log('📋 Credentials:', {
+  cloud_name: credentials.cloud_name,
+  api_key: credentials.api_key,
+  api_secret: credentials.api_secret.substring(0, 10) + '...'
 });
 
-console.log('🔍 Testing Cloudinary with new credentials...');
-console.log('Cloud Name:', cloudinary.config().cloud_name);
-console.log('API Key:', cloudinary.config().api_key);
+// Configure Cloudinary
+cloudinary.config(credentials);
 
-// Test upload with a reliable video URL
-cloudinary.uploader.upload(
-  'https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4',
-  {
-    resource_type: 'video',
-    folder: 'viral-videos',
-    public_id: `test_video_${Date.now()}`,
-    transformation: [
-      { width: 1080, height: 1920, crop: 'fill' },
-      { quality: 'auto' }
-    ]
-  },
-  function(error, result) {
-    if (error) {
-      console.error('❌ Upload failed:', error.message);
-      console.log('\n💡 The credentials are working, but the test video URL is not accessible.');
-      console.log('✅ Your Cloudinary setup is ready for real video uploads!');
-      console.log('\n📊 Your Cloudinary Dashboard:');
-      console.log('https://console.cloudinary.com/app/dtkps2uzi/home/dashboard');
-    } else {
-      console.log('\n✅ Video uploaded successfully!');
-      console.log('📹 Video URL:', result.secure_url);
-      console.log('🆔 Public ID:', result.public_id);
-      console.log('📁 Folder:', result.folder);
-      console.log('⏱️ Duration:', result.duration, 'seconds');
-      console.log('📏 Size:', (result.bytes / 1024 / 1024).toFixed(2), 'MB');
-      
-      console.log('\n🔗 You can view this video at:');
-      console.log(result.secure_url);
-      
-      console.log('\n📊 Your Cloudinary Dashboard:');
-      console.log('https://console.cloudinary.com/app/dtkps2uzi/home/dashboard');
+async function testCredentials() {
+  try {
+    console.log('\n📋 Test 1: Testing API connection...');
+    
+    // Try to list resources
+    const resources = await cloudinary.api.resources({
+      resource_type: 'video',
+      max_results: 1
+    });
+    
+    console.log('✅ API connection successful!');
+    console.log(`📁 Found ${resources.resources.length} videos`);
+    
+    if (resources.resources.length > 0) {
+      console.log(`🔗 Sample URL: ${resources.resources[0].secure_url}`);
     }
+    
+    console.log('\n📤 Test 2: Testing upload capability...');
+    
+    // Try to upload a simple text file first
+    const fs = require('fs');
+    const testFile = './test.txt';
+    fs.writeFileSync(testFile, 'This is a test file for Cloudinary');
+    
+    try {
+      const result = await cloudinary.uploader.upload(testFile, {
+        folder: 'viral-videos',
+        public_id: `test_${Date.now()}`
+      });
+      
+      console.log('✅ Upload test successful!');
+      console.log(`📁 Public ID: ${result.public_id}`);
+      console.log(`🔗 URL: ${result.secure_url}`);
+      
+      // Clean up
+      fs.unlinkSync(testFile);
+      
+    } catch (uploadError) {
+      console.error('❌ Upload test failed:', uploadError.message);
+      fs.unlinkSync(testFile);
+    }
+    
+  } catch (error) {
+    console.error('❌ API test failed:', error.message);
+    console.error('🔍 Full error:', error);
   }
-);
+}
+
+testCredentials();
