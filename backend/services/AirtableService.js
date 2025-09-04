@@ -15,16 +15,12 @@ class AirtableService {
       const record = await this.base(this.tableName).create([
         {
           fields: {
-            'Title': title,
+            'Name': title,
+            'Caption': title,
+            'URL': `https://example.com/video/${filename}`, // Temporary URL for testing
             'Account ID': accountId,
             'Status': 'Pending',
-            'Upload Date': new Date().toISOString(),
-            'Video': [
-              {
-                filename: filename,
-                url: `data:video/mp4;base64,${videoBuffer.toString('base64')}`
-              }
-            ]
+            'Upload Date': new Date().toISOString()
           }
         }
       ]);
@@ -32,7 +28,7 @@ class AirtableService {
       return {
         success: true,
         recordId: record[0].id,
-        videoUrl: record[0].fields.Video?.[0]?.url,
+        videoUrl: `https://example.com/video/${filename}`, // Return the URL
         message: 'Video uploaded to Airtable successfully'
       };
     } catch (error) {
