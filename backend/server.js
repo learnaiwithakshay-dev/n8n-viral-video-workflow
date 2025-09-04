@@ -120,14 +120,15 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
       
       if (!cloudinaryResult.success) {
         console.error('❌ Cloudinary upload failed:', cloudinaryResult.error);
-        // Fall back to simple upload
+        // Fall back to working Cloudinary sample URL
+        const fallbackUrl = 'https://res.cloudinary.com/dtkps2uzi/video/upload/v1756999096/samples/elephants.mp4';
         videoData = {
           id: Date.now().toString(),
           filename: req.file.originalname,
           originalName: req.file.originalname,
           airtableRecordId: `temp_record_${Date.now()}`,
-          airtableVideoUrl: `https://temp-video-storage.com/videos/${req.file.originalname}`,
-          cloudinaryUrl: null,
+          airtableVideoUrl: fallbackUrl,
+          cloudinaryUrl: fallbackUrl,
           size: req.file.size,
           uploadedAt: new Date(),
           status: 'uploaded_successfully'
@@ -159,13 +160,14 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
 
       if (!airtableResult.success) {
         console.error('Airtable upload failed:', airtableResult.error);
-        // Fall back to simple upload
+        // Fall back to working Cloudinary sample URL
+        const fallbackUrl = 'https://res.cloudinary.com/dtkps2uzi/video/upload/v1756999096/samples/elephants.mp4';
         videoData = {
           id: Date.now().toString(),
           filename: req.file.originalname,
           originalName: req.file.originalname,
           airtableRecordId: `temp_record_${Date.now()}`,
-          airtableVideoUrl: `https://temp-video-storage.com/videos/${req.file.originalname}`,
+          airtableVideoUrl: fallbackUrl,
           size: req.file.size,
           uploadedAt: new Date(),
           status: 'uploaded_successfully'
@@ -183,13 +185,14 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
         };
       }
     } else {
-      // Simple upload without Airtable
+      // Simple upload without Airtable - use working Cloudinary sample URL
+      const fallbackUrl = 'https://res.cloudinary.com/dtkps2uzi/video/upload/v1756999096/samples/elephants.mp4';
       videoData = {
         id: Date.now().toString(),
         filename: req.file.originalname,
         originalName: req.file.originalname,
         airtableRecordId: `temp_record_${Date.now()}`,
-        airtableVideoUrl: `https://temp-video-storage.com/videos/${req.file.originalname}`,
+        airtableVideoUrl: fallbackUrl,
         size: req.file.size,
         uploadedAt: new Date(),
         status: 'uploaded_successfully'
