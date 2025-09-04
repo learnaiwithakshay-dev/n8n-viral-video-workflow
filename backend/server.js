@@ -109,7 +109,7 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
 
     let videoData;
     
-    if (cloudinaryService && cloudinaryService.enabled !== false) {
+    if (cloudinaryService) {
       // Upload to Cloudinary
       const videoBuffer = fs.readFileSync(req.file.path);
       const cloudinaryResult = await cloudinaryService.uploadVideo(videoBuffer, req.file.originalname);
@@ -142,7 +142,7 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
           status: 'uploaded_to_cloudinary'
         };
       }
-    } else if (airtableService && airtableService.enabled) {
+    } else if (airtableService) {
       // Upload to Airtable
       const videoBuffer = fs.readFileSync(req.file.path);
       const airtableResult = await airtableService.uploadVideo(
@@ -204,7 +204,21 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
     });
   } catch (error) {
     console.error('Upload error:', error);
-    res.status(500).json({ error: 'Upload failed' });
+    
+    // Clean up file if it exists
+    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (cleanupError) {
+        console.error('Error cleaning up file:', cleanupError);
+      }
+    }
+    
+    res.status(500).json({ 
+      error: 'Upload failed', 
+      details: error.message,
+      success: false 
+    });
   }
 });
 

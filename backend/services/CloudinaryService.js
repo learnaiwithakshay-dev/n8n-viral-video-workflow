@@ -10,6 +10,9 @@ class CloudinaryService {
       api_secret: process.env.CLOUDINARY_API_SECRET || 'WU0l288kOX_R1hXm2QYD8ASbfZs'
     });
 
+    // Set enabled flag
+    this.enabled = true;
+
     // Configure storage
     this.storage = new CloudinaryStorage({
       cloudinary: cloudinary,
