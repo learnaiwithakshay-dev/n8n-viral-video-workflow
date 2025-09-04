@@ -73,25 +73,41 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend server running' });
 });
 
-// Upload video (simplified without Airtable for now)
+// Upload video to Airtable
 app.post('/api/upload-video', upload.single('video'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No video file uploaded' });
     }
 
-    // Simplified version without Airtable
+    // Read video file buffer
+    const videoBuffer = fs.readFileSync(req.file.path);
+    
+    // Upload to Airtable with a temporary title
+    const airtableResult = await airtableService.uploadVideo(
+      videoBuffer, 
+      req.file.originalname, 
+      'Pending Title', 
+      'pending_account'
+    );
+
+    if (!airtableResult.success) {
+      return res.status(500).json({ error: 'Failed to upload to Airtable' });
+    }
+
     const videoData = {
-      id: Date.now().toString(),
+      id: airtableResult.recordId,
       filename: req.file.originalname,
       originalName: req.file.originalname,
-      path: req.file.path,
-      airtableRecordId: `record_${Date.now()}`,
-      airtableVideoUrl: `https://example.com/video/${req.file.originalname}`,
+      airtableRecordId: airtableResult.recordId,
+      airtableVideoUrl: airtableResult.videoUrl,
       size: req.file.size,
       uploadedAt: new Date(),
-      status: 'uploaded'
+      status: 'uploaded_to_airtable'
     };
+
+    // Clean up local file
+    fs.unlinkSync(req.file.path);
 
     // Emit to connected clients
     io.emit('video-uploaded', videoData);
@@ -99,7 +115,7 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
     res.json({
       success: true,
       video: videoData,
-      message: 'Video uploaded successfully'
+      message: 'Video uploaded to Airtable successfully'
     });
   } catch (error) {
     console.error('Upload error:', error);

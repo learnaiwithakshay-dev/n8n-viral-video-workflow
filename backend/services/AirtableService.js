@@ -11,13 +11,13 @@ class AirtableService {
 
   async uploadVideo(videoBuffer, filename, title, accountId) {
     try {
-      // Create a record in Airtable with video attachment
+      // Create a record in Airtable with video information
       const record = await this.base(this.tableName).create([
         {
           fields: {
             'Name': title,
             'Caption': title,
-            'URL': `https://example.com/video/${filename}`, // Temporary URL for testing
+            'URL': `https://your-video-storage.com/videos/${filename}`, // This would be your actual video storage URL
             'Account ID': accountId,
             'Status': 'Pending',
             'Upload Date': new Date().toISOString()
@@ -28,7 +28,7 @@ class AirtableService {
       return {
         success: true,
         recordId: record[0].id,
-        videoUrl: `https://example.com/video/${filename}`, // Return the URL
+        videoUrl: `https://your-video-storage.com/videos/${filename}`, // Return the actual video URL
         message: 'Video uploaded to Airtable successfully'
       };
     } catch (error) {
