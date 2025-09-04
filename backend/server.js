@@ -25,8 +25,8 @@ const io = new Server(server, {
 
 // Initialize services
 const instagramService = new InstagramService();
-// Only initialize AirtableService if API key is available
-const airtableService = process.env.AIRTABLE_API_KEY ? new AirtableService() : null;
+// Initialize AirtableService with your credentials
+const airtableService = new AirtableService();
 
 // Middleware
 app.use(cors());
@@ -81,18 +81,30 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
       return res.status(400).json({ error: 'No video file uploaded' });
     }
 
-    // TEMPORARY: Skip Airtable for now to fix upload issues
-    // TODO: Re-enable Airtable once environment variables are configured
+    // Read video file buffer
+    const videoBuffer = fs.readFileSync(req.file.path);
     
+    // Upload to Airtable with a temporary title
+    const airtableResult = await airtableService.uploadVideo(
+      videoBuffer, 
+      req.file.originalname, 
+      'Pending Title', 
+      'pending_account'
+    );
+
+    if (!airtableResult.success) {
+      return res.status(500).json({ error: 'Failed to upload to Airtable' });
+    }
+
     const videoData = {
-      id: Date.now().toString(),
+      id: airtableResult.recordId,
       filename: req.file.originalname,
       originalName: req.file.originalname,
-      airtableRecordId: `temp_record_${Date.now()}`,
-      airtableVideoUrl: `https://temp-video-storage.com/videos/${req.file.originalname}`,
+      airtableRecordId: airtableResult.recordId,
+      airtableVideoUrl: airtableResult.videoUrl,
       size: req.file.size,
       uploadedAt: new Date(),
-      status: 'uploaded_successfully'
+      status: 'uploaded_to_airtable'
     };
 
     // Clean up local file
@@ -104,7 +116,7 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
     res.json({
       success: true,
       video: videoData,
-      message: 'Video uploaded successfully'
+      message: 'Video uploaded to Airtable successfully'
     });
   } catch (error) {
     console.error('Upload error:', error);
@@ -322,10 +334,10 @@ app.post('/api/n8n-webhook', async (req, res) => {
     console.log('Account ID:', accountId);
     console.log('Account Name:', accountName);
     
-    // TEMPORARY: Skip Airtable update for now
-    // if (videoData?.airtableRecordId) {
-    //   await airtableService.updateStatus(videoData.airtableRecordId, 'Processing');
-    // }
+    // Update Airtable record with title and account info
+    if (videoData?.airtableRecordId) {
+      await airtableService.updateStatus(videoData.airtableRecordId, 'Processing');
+    }
     
     // Call your n8n Cloud webhook URL with Instagram workflow
     // TODO: Update this URL with your actual n8n webhook URL

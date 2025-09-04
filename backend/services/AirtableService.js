@@ -37,26 +37,26 @@ class AirtableService {
     }
     
     try {
-      // Create a record in Airtable with video information
-      const record = await this.base(this.tableName).create([
-        {
-          fields: {
-            'Name': title,
-            'Caption': title,
-            'URL': `https://your-video-storage.com/videos/${filename}`, // This would be your actual video storage URL
-            'Account ID': accountId,
-            'Status': 'Pending',
-            'Upload Date': new Date().toISOString()
-          }
-        }
-      ]);
+             // Create a record in Airtable with video information
+       const record = await this.base(this.tableName).create([
+         {
+           fields: {
+             'Name': title,
+             'Caption': title,
+             'URL': `https://temp-video-storage.com/videos/${filename}`, // Temporary URL for testing
+             'Account ID': accountId,
+             'Status': 'Pending',
+             'Upload Date': new Date().toISOString()
+           }
+         }
+       ]);
 
-      return {
-        success: true,
-        recordId: record[0].id,
-        videoUrl: `https://your-video-storage.com/videos/${filename}`, // Return the actual video URL
-        message: 'Video uploaded to Airtable successfully'
-      };
+             return {
+         success: true,
+         recordId: record[0].id,
+         videoUrl: `https://temp-video-storage.com/videos/${filename}`, // Temporary URL for testing
+         message: 'Video uploaded to Airtable successfully'
+       };
     } catch (error) {
       console.error('Airtable upload error:', error);
       return {
