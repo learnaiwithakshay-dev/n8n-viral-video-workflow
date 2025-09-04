@@ -314,13 +314,23 @@ app.post('/api/n8n-webhook', async (req, res) => {
   try {
     const { videoData, title, accountId, accountName } = req.body;
     
+    console.log('🔍 n8n Webhook Debug:');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('Video data:', JSON.stringify(videoData, null, 2));
+    console.log('Title:', title);
+    console.log('Account ID:', accountId);
+    console.log('Account Name:', accountName);
+    
     // TEMPORARY: Skip Airtable update for now
     // if (videoData?.airtableRecordId) {
     //   await airtableService.updateStatus(videoData.airtableRecordId, 'Processing');
     // }
     
     // Call your n8n Cloud webhook URL with Instagram workflow
-    const n8nResponse = await axios.post('https://learnaiwithakshay.app.n8n.cloud/webhook-test/webhook-test', {
+    // TODO: Update this URL with your actual n8n webhook URL
+    const n8nWebhookUrl = 'https://learnaiwithakshay.app.n8n.cloud/webhook-test/webhook-test';
+    
+    const n8nPayload = {
       videoDescription: videoData?.description || 'Viral video content',
       videoCategory: 'entertainment',
       title: title,
@@ -332,11 +342,27 @@ app.post('/api/n8n-webhook', async (req, res) => {
         accessToken: process.env.INSTAGRAM_ACCESS_TOKEN,
         businessAccountId: process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID
       }
+    };
+    
+    console.log('📤 Sending to n8n:');
+    console.log('URL:', n8nWebhookUrl);
+    console.log('Payload:', JSON.stringify(n8nPayload, null, 2));
+    
+    const n8nResponse = await axios.post(n8nWebhookUrl, n8nPayload, {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      timeout: 10000
     });
     
-    res.json({ success: true, workflowId: n8nResponse.data.id });
+    console.log('✅ n8n Response:', JSON.stringify(n8nResponse.data, null, 2));
+    
+    res.json({ success: true, workflowId: n8nResponse.data.id || 'test_workflow_id' });
   } catch (error) {
-    console.error('n8n webhook error:', error);
+    console.error('❌ n8n webhook error:', error.message);
+    if (error.response) {
+      console.error('n8n response error:', error.response.status, error.response.data);
+    }
     // Don't fail the entire process if n8n webhook fails
     res.json({ success: true, workflowId: 'test_workflow_id' });
   }
