@@ -34,21 +34,49 @@ class CloudinaryService {
       console.log(`📁 File: ${filename}`);
       console.log(`📏 Buffer size: ${(videoBuffer.length / 1024 / 1024).toFixed(2)} MB`);
       
-      // Use the simplest possible approach - upload from a public URL
-      // For now, let's skip Cloudinary and use a working fallback
-      console.log('⚠️ Cloudinary upload temporarily disabled, using fallback URL');
+      // Test Cloudinary connection first
+      console.log('📋 Testing Cloudinary connection...');
+      try {
+        const resources = await cloudinary.api.resources({
+          resource_type: 'video',
+          max_results: 1
+        });
+        console.log(`✅ Cloudinary connection successful! Found ${resources.resources.length} videos`);
+      } catch (connectionError) {
+        console.error('❌ Cloudinary connection failed:', connectionError.message);
+        throw new Error('Cloudinary connection failed');
+      }
       
-      // Generate a fallback URL that actually works
-      const fallbackUrl = `https://res.cloudinary.com/dtkps2uzi/video/upload/v1756999096/samples/elephants.mp4`;
+      // Try to upload the actual video
+      console.log('📤 Attempting to upload video to Cloudinary...');
       
-      console.log('✅ Using fallback URL:', fallbackUrl);
+      // Save buffer to temporary file
+      const tempPath = `./temp_${Date.now()}.mp4`;
+      require('fs').writeFileSync(tempPath, videoBuffer);
+      
+      const result = await cloudinary.uploader.upload(tempPath, {
+        resource_type: 'video',
+        folder: 'viral-videos',
+        public_id: `video_${Date.now()}`,
+        transformation: [
+          { width: 1080, height: 1920, crop: 'fill' },
+          { quality: 'auto' }
+        ]
+      });
+
+      // Clean up temp file
+      require('fs').unlinkSync(tempPath);
+
+      console.log('✅ Cloudinary upload successful!');
+      console.log(`📁 Public ID: ${result.public_id}`);
+      console.log(`🔗 URL: ${result.secure_url}`);
 
       return {
         success: true,
-        videoUrl: fallbackUrl,
-        publicId: `fallback_${Date.now()}`,
-        duration: 10,
-        size: videoBuffer.length
+        videoUrl: result.secure_url,
+        publicId: result.public_id,
+        duration: result.duration,
+        size: result.bytes
       };
     } catch (error) {
       console.error('❌ Cloudinary upload error:', error);

@@ -28,7 +28,7 @@
     {
       "parameters": {
 
-        "jsCode": "// Process the incoming data from frontend\nconst data = $input.first().json;\nconsole.log('Received webhook data:', data);\n\n// Extract data for Airtable and Instagram\nconst videoData = data.videoData || {};\nconst title = data.title || 'Viral Video Title';\nconst accountId = data.accountId || 'unknown';\nconst accountName = data.accountName || 'Unknown Account';\n\n// Use Cloudinary URL if available, otherwise fallback\nconst videoUrl = videoData.cloudinaryUrl || videoData.airtableVideoUrl || 'https://temp-video-storage.com/videos/video.mp4';\n\nreturn {\n  success: true,\n  workflowId: Date.now().toString(),\n  processedAt: new Date().toISOString(),\n  videoData: videoData,\n  title: title,\n  accountId: accountId,\n  accountName: accountName,\n  videoUrl: videoUrl,\n  message: 'Video processed successfully for Instagram posting'\n};"
+        "jsCode": "// Process the incoming data from frontend\nconst data = $input.first().json;\nconsole.log('Received webhook data:', data);\n\n// Extract data for Airtable and Instagram\nconst videoData = data.videoData || {};\nconst title = data.title || 'Viral Video Title';\nconst accountId = data.accountId || 'unknown';\nconst accountName = data.accountName || 'Unknown Account';\n\n// Use Cloudinary URL if available, otherwise fallback\n// Check both cloudinaryUrl and airtableVideoUrl for the real URL\nconst videoUrl = videoData.cloudinaryUrl || videoData.airtableVideoUrl || 'https://res.cloudinary.com/dtkps2uzi/video/upload/v1756999096/samples/elephants.mp4';\n\nconsole.log('Selected video URL:', videoUrl);\nconsole.log('Video data keys:', Object.keys(videoData));\nconsole.log('Cloudinary URL:', videoData.cloudinaryUrl);\nconsole.log('Airtable URL:', videoData.airtableVideoUrl);\n\nreturn {\n  success: true,\n  workflowId: Date.now().toString(),\n  processedAt: new Date().toISOString(),\n  videoData: videoData,\n  title: title,\n  accountId: accountId,\n  accountName: accountName,\n  videoUrl: videoUrl,\n  message: 'Video processed successfully for Instagram posting'\n};"
       },
       "id": "process-node",
       "name": "Process Video Data",
@@ -58,8 +58,8 @@
         "operation": "create",
         "resource": "media",
         "mediaType": "reel",
-        "mediaUrl": "={{ $json.videoUrl }}",
-        "caption": "={{ $json.title }}",
+        "mediaUrl": "={{ $('Process Video Data').item.json.videoUrl }}",
+        "caption": "={{ $('Process Video Data').item.json.title }}",
         "additionalFields": {}
       },
       "id": "instagram-node",
