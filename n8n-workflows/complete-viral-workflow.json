@@ -1,0 +1,121 @@
+{
+  "name": "Complete Viral Video Instagram Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook-test",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process the incoming data from frontend\nconst data = $input.first().json;\nconsole.log('Received webhook data:', data);\n\n// Extract data for Airtable and Instagram\nconst videoData = data.videoData || {};\nconst title = data.title || 'Viral Video Title';\nconst accountId = data.accountId || 'unknown';\nconst accountName = data.accountName || 'Unknown Account';\n\nreturn {\n  success: true,\n  workflowId: Date.now().toString(),\n  processedAt: new Date().toISOString(),\n  videoData: videoData,\n  title: title,\n  accountId: accountId,\n  accountName: accountName,\n  message: 'Video processed successfully for Instagram posting'\n};"
+      },
+      "id": "process-node",
+      "name": "Process Video Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "baseId": "={{ $json.videoData.airtableRecordId ? 'appfVqQwxyWbLdrDn' : 'temp_base' }}",
+        "tableId": "tblWYClJPsX4UMZRp",
+        "fields": {
+          "Name": "={{ $json.title }}",
+          "Caption": "={{ $json.title }}",
+          "URL": "={{ $json.videoData.airtableVideoUrl || 'https://temp-video-storage.com/videos/video.mp4' }}"
+        }
+      },
+      "id": "airtable-node",
+      "name": "Update Airtable Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "resource": "media",
+        "mediaType": "reel",
+        "mediaUrl": "={{ $json.videoData.airtableVideoUrl || 'https://temp-video-storage.com/videos/video.mp4' }}",
+        "caption": "={{ $json.title }}",
+        "additionalFields": {}
+      },
+      "id": "instagram-node",
+      "name": "Post to Instagram",
+      "type": "n8n-nodes-base.instagram",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"workflowId\": \"{{ $('Process Video Data').item.json.workflowId }}\",\n  \"processedAt\": \"{{ $('Process Video Data').item.json.processedAt }}\",\n  \"title\": \"{{ $json.title }}\",\n  \"accountName\": \"{{ $json.accountName }}\",\n  \"instagramPostId\": \"{{ $json.id }}\",\n  \"message\": \"Video posted to Instagram successfully!\"\n}",
+        "options": {}
+      },
+      "id": "respond-node",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Video Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Video Data": {
+      "main": [
+        [
+          {
+            "node": "Update Airtable Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Airtable Record": {
+      "main": [
+        [
+          {
+            "node": "Post to Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Instagram": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1"
+}
