@@ -29,11 +29,11 @@
         "operation": "create",
         "baseId": "={{ $json.videoData.airtableRecordId ? 'appfVqQwxyWbLdrDn' : 'temp_base' }}",
         "tableId": "tblWYCIJPsX4UMZRp",
-        "fields": {
-          "Name": "={{ $json.title }}",
-          "Caption": "={{ $json.title }}",
-          "URL": "={{ $json.videoData.airtableVideoUrl || 'https://temp-video-storage.com/videos/video.mp4' }}"
-        }
+                   "fields": {
+             "Name": "={{ $json.title }}",
+             "Caption": "={{ $json.title }}",
+             "URL": "={{ $json.videoData.cloudinaryUrl || $json.videoData.airtableVideoUrl || 'https://temp-video-storage.com/videos/video.mp4' }}"
+           }
       },
       "id": "airtable-node",
       "name": "Update Airtable Record",
@@ -46,7 +46,7 @@
         "operation": "create",
         "resource": "media",
         "mediaType": "reel",
-        "mediaUrl": "={{ $json.videoData.airtableVideoUrl || 'https://temp-video-storage.com/videos/video.mp4' }}",
+        "mediaUrl": "={{ $json.videoData.cloudinaryUrl || $json.videoData.airtableVideoUrl || 'https://temp-video-storage.com/videos/video.mp4' }}",
         "caption": "={{ $json.title }}",
         "additionalFields": {}
       },
