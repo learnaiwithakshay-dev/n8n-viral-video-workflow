@@ -28,7 +28,7 @@
       "parameters": {
         "operation": "create",
         "baseId": "={{ $json.videoData.airtableRecordId ? 'appfVqQwxyWbLdrDn' : 'temp_base' }}",
-        "tableId": "tblWYClJPsX4UMZRp",
+        "tableId": "tblWYCIJPsX4UMZRp",
         "fields": {
           "Name": "={{ $json.title }}",
           "Caption": "={{ $json.title }}",
