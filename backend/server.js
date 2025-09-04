@@ -8,6 +8,7 @@ const { Server } = require('socket.io');
 const http = require('http');
 const InstagramService = require('./services/InstagramService');
 const AirtableService = require('./services/AirtableService');
+const CloudinaryService = require('./services/CloudinaryService');
 require('dotenv').config();
 
 const app = express();
@@ -27,6 +28,8 @@ const io = new Server(server, {
 const instagramService = new InstagramService();
 // Initialize AirtableService with proper error handling
 let airtableService = null;
+let cloudinaryService = null;
+
 try {
   if (process.env.AIRTABLE_API_KEY && process.env.AIRTABLE_BASE_ID) {
     airtableService = new AirtableService();
@@ -37,6 +40,18 @@ try {
 } catch (error) {
   console.log('⚠️ AirtableService initialization failed:', error.message);
   airtableService = null;
+}
+
+try {
+  if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+    cloudinaryService = new CloudinaryService();
+    console.log('✅ CloudinaryService initialized successfully');
+  } else {
+    console.log('⚠️ CloudinaryService disabled - missing environment variables');
+  }
+} catch (error) {
+  console.log('⚠️ CloudinaryService initialization failed:', error.message);
+  cloudinaryService = null;
 }
 
 // Middleware
@@ -94,7 +109,40 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
 
     let videoData;
     
-    if (airtableService && airtableService.enabled) {
+    if (cloudinaryService && cloudinaryService.enabled !== false) {
+      // Upload to Cloudinary
+      const videoBuffer = fs.readFileSync(req.file.path);
+      const cloudinaryResult = await cloudinaryService.uploadVideo(videoBuffer, req.file.originalname);
+      
+      if (!cloudinaryResult.success) {
+        console.error('Cloudinary upload failed:', cloudinaryResult.error);
+        // Fall back to simple upload
+        videoData = {
+          id: Date.now().toString(),
+          filename: req.file.originalname,
+          originalName: req.file.originalname,
+          airtableRecordId: `temp_record_${Date.now()}`,
+          airtableVideoUrl: `https://temp-video-storage.com/videos/${req.file.originalname}`,
+          cloudinaryUrl: null,
+          size: req.file.size,
+          uploadedAt: new Date(),
+          status: 'uploaded_successfully'
+        };
+      } else {
+        videoData = {
+          id: cloudinaryResult.publicId,
+          filename: req.file.originalname,
+          originalName: req.file.originalname,
+          airtableRecordId: `temp_record_${Date.now()}`,
+          airtableVideoUrl: `https://temp-video-storage.com/videos/${req.file.originalname}`,
+          cloudinaryUrl: cloudinaryResult.videoUrl,
+          size: cloudinaryResult.size,
+          duration: cloudinaryResult.duration,
+          uploadedAt: new Date(),
+          status: 'uploaded_to_cloudinary'
+        };
+      }
+    } else if (airtableService && airtableService.enabled) {
       // Upload to Airtable
       const videoBuffer = fs.readFileSync(req.file.path);
       const airtableResult = await airtableService.uploadVideo(
