@@ -6,16 +6,28 @@
         "httpMethod": "POST",
         "path": "webhook-test",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "rawBody": true,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "id": "webhook-node",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 300]
+      "position": [240, 300],
+      "webhookId": "webhook-test"
     },
     {
       "parameters": {
+
         "jsCode": "// Process the incoming data from frontend\nconst data = $input.first().json;\nconsole.log('Received webhook data:', data);\n\n// Extract data for Airtable and Instagram\nconst videoData = data.videoData || {};\nconst title = data.title || 'Viral Video Title';\nconst accountId = data.accountId || 'unknown';\nconst accountName = data.accountName || 'Unknown Account';\n\n// Use Cloudinary URL if available, otherwise fallback\nconst videoUrl = videoData.cloudinaryUrl || videoData.airtableVideoUrl || 'https://temp-video-storage.com/videos/video.mp4';\n\nreturn {\n  success: true,\n  workflowId: Date.now().toString(),\n  processedAt: new Date().toISOString(),\n  videoData: videoData,\n  title: title,\n  accountId: accountId,\n  accountName: accountName,\n  videoUrl: videoUrl,\n  message: 'Video processed successfully for Instagram posting'\n};"
       },
       "id": "process-node",
@@ -116,6 +128,13 @@
     }
   },
   "active": true,
-  "settings": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all",
+    "saveDataManualExecution": true
+  },
   "versionId": "1"
 }
